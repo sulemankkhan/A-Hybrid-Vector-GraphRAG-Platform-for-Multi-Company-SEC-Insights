@@ -8,5 +8,10 @@ openai
 langchain-openai
 langchain-community
 streamlit
-requests
 pinecone
+fastapi
+uvicorn
+pyjwt
+python-multipart
+passlib
+requests
