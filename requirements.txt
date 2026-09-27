@@ -6,6 +6,7 @@ tiktoken
 sentence-transformers
 numpy
 torch
+torchvision
 chromadb
 openai
 langchain-openai
