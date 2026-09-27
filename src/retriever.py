@@ -3,7 +3,7 @@ import sys
 import logging
 from pathlib import Path
 from dotenv import load_dotenv
-import chromadb
+from pinecone import Pinecone
 from neo4j import GraphDatabase
 import requests
 import numpy as np
@@ -18,7 +18,8 @@ load_dotenv()
 
 # Singleton resource managers
 embedding_model = None
-chroma_client = None
+pinecone_client = None
+pinecone_index = None
 neo4j_driver = None
 
 class HFCloudEmbeddingModel:
@@ -40,12 +41,14 @@ def get_embedding_model():
         embedding_model = HFCloudEmbeddingModel()
     return embedding_model
 
-def get_chroma_client():
-    global chroma_client
-    if chroma_client is None:
-        db_path = str(Path("data/vector_store").absolute())
-        chroma_client = chromadb.PersistentClient(path=db_path)
-    return chroma_client
+def get_pinecone_index():
+    global pinecone_client, pinecone_index
+    if pinecone_index is None:
+        api_key = os.getenv("PINECONE_API_KEY")
+        index_name = os.getenv("PINECONE_INDEX_NAME")
+        pinecone_client = Pinecone(api_key=api_key)
+        pinecone_index = pinecone_client.Index(index_name)
+    return pinecone_index
 
 def get_neo4j_driver():
     global neo4j_driver
@@ -56,48 +59,47 @@ def get_neo4j_driver():
         neo4j_driver = GraphDatabase.driver(uri, auth=(user, password))
     return neo4j_driver
 
-def query_single_collection(client, collection_name: str, query_embedding: list, top_k: int = 5) -> list:
-    """Helper to query a single ChromaDB collection and return ranked documents."""
-    try:
-        collection = client.get_collection(name=collection_name)
-    except Exception as e:
-        logger.error(f"Failed to access ChromaDB collection {collection_name}: {e}")
-        return []
-        
+def query_single_collection(index, namespace: str, query_embedding: list, top_k: int = 5) -> list:
+    """Helper to query a single Pinecone namespace and return ranked documents."""
     try:
         # Ensure we only fetch child nodes for parent_child index, regular nodes for others
-        where_clause = {"is_parent": False} if collection_name == "idx_parent_child" else None
+        filter_clause = {"is_parent": False} if namespace == "idx_parent_child" else None
         
-        results = collection.query(
-            query_embeddings=[query_embedding],
-            n_results=top_k,
-            where=where_clause
+        results = index.query(
+            namespace=namespace,
+            vector=query_embedding,
+            top_k=top_k,
+            include_metadata=True,
+            filter=filter_clause
         )
         
-        if not results['documents'] or not results['documents'][0]:
+        if not results.matches:
             return []
             
         retrieved_docs = []
-        for rank, (doc, meta) in enumerate(zip(results['documents'][0], results['metadatas'][0])):
+        for rank, match in enumerate(results.matches):
+            meta = match.metadata
+            doc = meta.get("text", "")
+            
             # Hierarchical Child-to-Parent Interception
-            if collection_name == "idx_parent_child" and meta and "parent_chunk_id" in meta:
+            if namespace == "idx_parent_child" and meta and "parent_chunk_id" in meta:
                 parent_id = meta["parent_chunk_id"]
                 try:
-                    parent_results = collection.get(ids=[parent_id])
-                    if parent_results and parent_results.get("documents"):
-                        doc = parent_results["documents"][0]
+                    parent_results = index.fetch(ids=[parent_id], namespace=namespace)
+                    if parent_results and parent_id in parent_results.vectors:
+                        doc = parent_results.vectors[parent_id].metadata.get("text", doc)
                 except Exception as e:
                     logger.error(f"Failed to fetch parent chunk {parent_id}: {e}")
                     
             retrieved_docs.append({
                 "text": doc,
                 "rank": rank + 1,
-                "source": collection_name
+                "source": namespace
             })
             
         return retrieved_docs
     except Exception as e:
-        logger.error(f"Query failed on collection {collection_name}: {e}")
+        logger.error(f"Query failed on namespace {namespace}: {e}")
         return []
 
 def vector_search_rrf(query: str, top_k: int = 5) -> list:
@@ -105,18 +107,18 @@ def vector_search_rrf(query: str, top_k: int = 5) -> list:
     Parallel Vector Retrieval with Reciprocal Rank Fusion (RRF).
     """
     model = get_embedding_model()
-    client = get_chroma_client()
+    index = get_pinecone_index()
     
     query_embedding = model.encode(query, show_progress_bar=False).tolist()
-    collections = ['idx_fixed', 'idx_recursive', 'idx_semantic', 'idx_parent_child']
+    namespaces = ['idx_fixed', 'idx_recursive', 'idx_semantic', 'idx_parent_child']
     
     all_results = []
     
-    # Concurrently query all 4 isolated ChromaDB collections
+    # Concurrently query all 4 isolated Pinecone namespaces
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
         futures = {
-            executor.submit(query_single_collection, client, col, query_embedding, top_k): col 
-            for col in collections
+            executor.submit(query_single_collection, index, ns, query_embedding, top_k): ns 
+            for ns in namespaces
         }
         for future in concurrent.futures.as_completed(futures):
             all_results.extend(future.result())

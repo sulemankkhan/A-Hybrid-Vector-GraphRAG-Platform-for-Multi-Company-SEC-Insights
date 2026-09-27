@@ -4,9 +4,9 @@ python-dotenv
 tqdm
 tiktoken
 numpy
-chromadb
 openai
 langchain-openai
 langchain-community
 streamlit
 requests
+pinecone

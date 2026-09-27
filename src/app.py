@@ -69,7 +69,7 @@ with st.sidebar:
         
     st.markdown("---")
     st.subheader("Database Metadata")
-    st.write("**Vector Store:** ChromaDB (Embedded SQLite)")
+    st.write("**Vector Store:** Pinecone (Cloud)")
     st.write("**Graph Store:** Neo4j Aura (Cloud)")
     st.write("**Embedding Model:** all-MiniLM-L6-v2")
     
