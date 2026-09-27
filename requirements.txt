@@ -3,12 +3,10 @@ neo4j
 python-dotenv
 tqdm
 tiktoken
-sentence-transformers
 numpy
-torch
-torchvision
 chromadb
 openai
 langchain-openai
 langchain-community
 streamlit
+requests

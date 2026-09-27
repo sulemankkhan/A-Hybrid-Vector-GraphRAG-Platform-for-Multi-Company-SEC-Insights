@@ -5,8 +5,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 import chromadb
 from neo4j import GraphDatabase
-import torch
-from sentence_transformers import SentenceTransformer
+import requests
+import numpy as np
 import concurrent.futures
 
 from src.query_router import route_query
@@ -21,17 +21,23 @@ embedding_model = None
 chroma_client = None
 neo4j_driver = None
 
+class HFCloudEmbeddingModel:
+    def __init__(self):
+        self.api_key = os.getenv("HF_TOKEN")
+        self.api_url = "https://api-inference.huggingface.co/pipeline/feature-extraction/sentence-transformers/all-MiniLM-L6-v2"
+        self.headers = {"Authorization": f"Bearer {self.api_key}"} if self.api_key else {}
+        
+    def encode(self, query, show_progress_bar=False):
+        response = requests.post(self.api_url, headers=self.headers, json={"inputs": query})
+        if response.status_code != 200:
+            logger.error(f"HF API Error: {response.text}")
+            return np.zeros(384) # Fallback empty vector
+        return np.array(response.json())
+
 def get_embedding_model():
     global embedding_model
     if embedding_model is None:
-        # Map to Apple Silicon MPS backend if available
-        if torch.backends.mps.is_available():
-            device = 'mps'
-        elif torch.cuda.is_available():
-            device = 'cuda'
-        else:
-            device = 'cpu'
-        embedding_model = SentenceTransformer('all-MiniLM-L6-v2', device=device)
+        embedding_model = HFCloudEmbeddingModel()
     return embedding_model
 
 def get_chroma_client():
