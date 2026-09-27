@@ -4,16 +4,10 @@ python-dotenv
 tqdm
 tiktoken
 sentence-transformers
-scikit-learn
 numpy
 torch
 chromadb
 openai
-ragas
-datasets
-pandas
-tabulate
 langchain-openai
 langchain-community
 streamlit
-pyarrow<21.0.0
