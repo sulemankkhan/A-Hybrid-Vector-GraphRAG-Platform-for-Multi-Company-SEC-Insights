@@ -16,3 +16,4 @@ tabulate
 langchain-openai
 langchain-community
 streamlit
+pyarrow<21.0.0
