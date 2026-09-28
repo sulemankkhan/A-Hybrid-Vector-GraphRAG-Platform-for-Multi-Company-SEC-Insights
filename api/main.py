@@ -122,6 +122,15 @@ async def chat(request: QueryRequest, current_user: str = Depends(get_current_us
         raise HTTPException(status_code=500, detail=str(e))
 
 from fastapi import Request
+@app.api_route("/{path_name:path}", methods=["GET", "POST", "PUT", "DELETE"])
+async def safe_catch_all(request: Request, path_name: str):
+    return {
+        "answer": f"DIAGNOSTIC PATH: {path_name} | METHOD: {request.method} | URL: {request.url} | HEADERS: {dict(request.headers)}",
+        "vector_context": [],
+        "graph_context": []
+    }
+
+from fastapi import Request
 @app.api_route("/api/debug/{path_name:path}", methods=["GET", "POST"])
 async def debug_route(request: Request, path_name: str):
     return {
