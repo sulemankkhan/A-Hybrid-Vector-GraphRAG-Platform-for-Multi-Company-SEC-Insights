@@ -120,3 +120,12 @@ async def chat(request: QueryRequest, current_user: str = Depends(get_current_us
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+from fastapi import Request
+@app.api_route("/api/debug/{path_name:path}", methods=["GET", "POST"])
+async def debug_route(request: Request, path_name: str):
+    return {
+        "request_url": str(request.url),
+        "path_info": request.scope.get("path"),
+        "raw_path": request.scope.get("raw_path").decode() if request.scope.get("raw_path") else None
+    }
