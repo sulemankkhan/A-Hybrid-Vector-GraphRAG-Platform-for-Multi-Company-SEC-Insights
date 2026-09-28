@@ -18,14 +18,15 @@ _embedding_model = None
 
 class HFCloudEmbeddingModel:
     """
-    HuggingFace Inference API — matches the 384-dim all-MiniLM-L6-v2
+    HuggingFace Inference API v2 — matches the 384-dim all-MiniLM-L6-v2
     vectors already stored in Pinecone. Works on Vercel (DNS resolves there).
     Falls back to zero vectors on local Mac where HF DNS is blocked.
     """
     def __init__(self):
         self.api_key = os.getenv("HF_TOKEN", "")
-        self.api_url = "https://api-inference.huggingface.co/pipeline/feature-extraction/sentence-transformers/all-MiniLM-L6-v2"
-        self.headers = {"Authorization": f"Bearer {self.api_key}"} if self.api_key else {}
+        # v2 API — more reliable, no cold-start delays
+        self.api_url = "https://router.huggingface.co/hf-inference/models/sentence-transformers/all-MiniLM-L6-v2/pipeline/feature-extraction"
+        self.headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
 
     def encode(self, query, show_progress_bar=False):
         try:
