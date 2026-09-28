@@ -106,7 +106,7 @@ async def chat(request: QueryRequest, current_user: str = Depends(get_current_us
         )
         
         response = client.chat.completions.create(
-            model="gpt-oss-120b",
+            model="llama3-70b-8192",
             messages=[{"role": "user", "content": system_prompt}],
             temperature=0.0,
             max_tokens=1024,
