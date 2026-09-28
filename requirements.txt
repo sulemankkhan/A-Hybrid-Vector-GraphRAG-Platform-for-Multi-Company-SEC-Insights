@@ -15,4 +15,3 @@ pyjwt
 python-multipart
 passlib
 requests
-sentence-transformers

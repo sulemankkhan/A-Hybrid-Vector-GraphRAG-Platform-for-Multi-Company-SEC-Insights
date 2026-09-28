@@ -16,38 +16,45 @@ _neo4j_driver = None
 _embedding_model = None
 
 
-class LocalEmbeddingModel:
+class HFCloudEmbeddingModel:
     """
-    Uses sentence-transformers locally — no API token, no DNS, no network.
-    Falls back to zero vectors if the library is unavailable.
+    Calls HuggingFace Inference API for embeddings.
+    No PyTorch, no large dependencies — works within Vercel's 500MB bundle limit.
+    Falls back to zero vectors gracefully if the API is unavailable.
     """
     def __init__(self):
-        self._model = None
-        self._load()
-
-    def _load(self):
-        try:
-            from sentence_transformers import SentenceTransformer
-            self._model = SentenceTransformer("all-MiniLM-L6-v2")
-            logger.info("Local SentenceTransformer model loaded successfully.")
-        except Exception as e:
-            logger.error(f"Failed to load SentenceTransformer: {e}. Vector search will use zero vectors.")
-            self._model = None
+        self.api_key = os.getenv("HF_TOKEN", "")
+        self.api_url = "https://api-inference.huggingface.co/pipeline/feature-extraction/sentence-transformers/all-MiniLM-L6-v2"
+        self.headers = {"Authorization": f"Bearer {self.api_key}"} if self.api_key else {}
 
     def encode(self, query, show_progress_bar=False):
-        if self._model is None:
-            return np.zeros(384)
         try:
-            return np.array(self._model.encode(query, show_progress_bar=show_progress_bar))
+            import requests as req
+            response = req.post(
+                self.api_url,
+                headers=self.headers,
+                json={"inputs": query},
+                timeout=15
+            )
+            if response.status_code != 200:
+                logger.error(f"HF API Error {response.status_code}: {response.text}")
+                return np.zeros(384)
+            data = response.json()
+            # Handle both single and batch response formats
+            if isinstance(data, list) and len(data) > 0:
+                if isinstance(data[0], list):
+                    return np.array(data[0])
+                return np.array(data)
+            return np.zeros(384)
         except Exception as e:
-            logger.error(f"Encoding error: {e}")
+            logger.error(f"HF API call failed: {e}. Falling back to zero vector.")
             return np.zeros(384)
 
 
 def get_embedding_model():
     global _embedding_model
     if _embedding_model is None:
-        _embedding_model = LocalEmbeddingModel()
+        _embedding_model = HFCloudEmbeddingModel()
     return _embedding_model
 
 
