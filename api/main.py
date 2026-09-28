@@ -44,7 +44,7 @@ def create_access_token(data: dict):
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     # Mock user verification for demo deployment
     expected_username = os.getenv("API_USERNAME", "admin")
-    expected_password = os.getenv("API_PASSWORD", "password123")
+    expected_password = os.getenv("API_PASSWORD", "admin123")
     
     if form_data.username != expected_username or form_data.password != expected_password:
         raise HTTPException(status_code=400, detail="Incorrect username or password")
@@ -106,7 +106,7 @@ async def chat(request: QueryRequest, current_user: str = Depends(get_current_us
         )
         
         response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-120b",
             messages=[{"role": "user", "content": system_prompt}],
             temperature=0.0,
             max_tokens=1024,
