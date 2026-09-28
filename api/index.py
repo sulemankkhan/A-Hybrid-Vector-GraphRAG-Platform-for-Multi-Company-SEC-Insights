@@ -39,6 +39,7 @@ def create_access_token(data: dict):
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 @app.post("/api/token")
+@app.post("/token")
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     # Mock user verification for demo deployment
     expected_username = os.getenv("API_USERNAME", "admin")
@@ -69,6 +70,7 @@ class QueryResponse(BaseModel):
     graph_context: list
 
 @app.post("/api/chat", response_model=QueryResponse)
+@app.post("/chat", response_model=QueryResponse)
 async def chat(request: QueryRequest, current_user: str = Depends(get_current_user)):
     try:
         # 1. NER Extraction
@@ -118,13 +120,3 @@ async def chat(request: QueryRequest, current_user: str = Depends(get_current_us
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-from fastapi import Request
-@app.api_route("/{path_name:path}", methods=["GET", "POST", "PUT", "DELETE"])
-async def catch_all(request: Request, path_name: str):
-    return {
-        "request_method": request.method,
-        "request_url": str(request.url),
-        "path_name": path_name,
-        "headers": dict(request.headers)
-    }
