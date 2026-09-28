@@ -56,6 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
+                credentials: 'include',
                 body: formData
             });
 
@@ -96,6 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${authToken}`
                 },
+                credentials: 'include',
                 body: JSON.stringify({ query: query })
             });
 
