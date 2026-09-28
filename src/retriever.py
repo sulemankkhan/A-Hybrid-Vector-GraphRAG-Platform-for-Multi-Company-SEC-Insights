@@ -24,8 +24,8 @@ class HFCloudEmbeddingModel:
     """
     def __init__(self):
         self.api_key = os.getenv("HF_TOKEN", "")
-        # v2 API — more reliable, no cold-start delays
-        self.api_url = "https://router.huggingface.co/hf-inference/models/sentence-transformers/all-MiniLM-L6-v2/pipeline/feature-extraction"
+        # Classic pipeline API — works with any HF read token
+        self.api_url = "https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2"
         self.headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
 
     def encode(self, query, show_progress_bar=False):
