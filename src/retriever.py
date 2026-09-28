@@ -18,9 +18,9 @@ _embedding_model = None
 
 class HFCloudEmbeddingModel:
     """
-    Calls HuggingFace Inference API for embeddings.
-    No PyTorch, no large dependencies — works within Vercel's 500MB bundle limit.
-    Falls back to zero vectors gracefully if the API is unavailable.
+    HuggingFace Inference API — matches the 384-dim all-MiniLM-L6-v2
+    vectors already stored in Pinecone. Works on Vercel (DNS resolves there).
+    Falls back to zero vectors on local Mac where HF DNS is blocked.
     """
     def __init__(self):
         self.api_key = os.getenv("HF_TOKEN", "")
@@ -40,14 +40,13 @@ class HFCloudEmbeddingModel:
                 logger.error(f"HF API Error {response.status_code}: {response.text}")
                 return np.zeros(384)
             data = response.json()
-            # Handle both single and batch response formats
             if isinstance(data, list) and len(data) > 0:
                 if isinstance(data[0], list):
                     return np.array(data[0])
                 return np.array(data)
             return np.zeros(384)
         except Exception as e:
-            logger.error(f"HF API call failed: {e}. Falling back to zero vector.")
+            logger.error(f"HF API call failed (DNS/network): {e}")
             return np.zeros(384)
 
 
@@ -206,7 +205,7 @@ def graph_search(entities_dict: dict) -> list:
     """
 
     try:
-        with driver.session(database="neo4j") as session:
+        with driver.session() as session:  # No database arg — Aura auto-routes
             result = session.run(query, entities=entities)
             for record in result:
                 n1, rel1, n2, rel2, n3 = record["n1"], record["rel1"], record["n2"], record["rel2"], record["n3"]
