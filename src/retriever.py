@@ -29,11 +29,21 @@ class HFCloudEmbeddingModel:
         self.headers = {"Authorization": f"Bearer {self.api_key}"} if self.api_key else {}
         
     def encode(self, query, show_progress_bar=False):
-        response = requests.post(self.api_url, headers=self.headers, json={"inputs": query})
-        if response.status_code != 200:
-            logger.error(f"HF API Error: {response.text}")
-            return np.zeros(384) # Fallback empty vector
-        return np.array(response.json())
+        try:
+            response = requests.post(self.api_url, headers=self.headers, json={"inputs": query}, timeout=10)
+            if response.status_code != 200:
+                logger.error(f"HF API Error: {response.text}")
+                return np.zeros(384)
+            
+            data = response.json()
+            if isinstance(data, list) and len(data) > 0 and isinstance(data[0], list):
+                # Handle batch response format
+                return np.array(data[0])
+            return np.array(data)
+        except requests.exceptions.RequestException as e:
+            logger.error(f"HF API Network Error (DNS/Timeout): {e}")
+            # Fallback to zero vector so GraphRAG can still function
+            return np.zeros(384)
 
 def get_embedding_model():
     global embedding_model
