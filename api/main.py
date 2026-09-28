@@ -38,6 +38,7 @@ def create_access_token(data: dict):
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
+@app.post("/api/main/token")
 @app.post("/api/token")
 @app.post("/token")
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
@@ -69,6 +70,7 @@ class QueryResponse(BaseModel):
     vector_context: list
     graph_context: list
 
+@app.post("/api/main/chat", response_model=QueryResponse)
 @app.post("/api/chat", response_model=QueryResponse)
 @app.post("/chat", response_model=QueryResponse)
 async def chat(request: QueryRequest, current_user: str = Depends(get_current_user)):
@@ -120,15 +122,6 @@ async def chat(request: QueryRequest, current_user: str = Depends(get_current_us
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-from fastapi import Request
-@app.api_route("/{path_name:path}", methods=["GET", "POST", "PUT", "DELETE"])
-async def safe_catch_all(request: Request, path_name: str):
-    return {
-        "answer": f"DIAGNOSTIC PATH: {path_name} | METHOD: {request.method} | URL: {request.url} | HEADERS: {dict(request.headers)}",
-        "vector_context": [],
-        "graph_context": []
-    }
 
 from fastapi import Request
 @app.api_route("/api/debug/{path_name:path}", methods=["GET", "POST"])
