@@ -109,9 +109,11 @@ async def chat(request: QueryRequest, current_user: str = Depends(get_current_us
         )
         answer = response.choices[0].message.content
             
+        formatted_vectors = [{"text": v, "source": "Pinecone RRF"} for v in vector_results]
+        
         return QueryResponse(
             answer=answer,
-            vector_context=vector_results,
+            vector_context=formatted_vectors,
             graph_context=graph_results
         )
     except Exception as e:
