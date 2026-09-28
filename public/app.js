@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
             formData.append('username', username);
             formData.append('password', password);
 
-            const response = await fetch('/api/token', {
+            const response = await fetch('/api/main/token', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
         graphContent.innerHTML = '<p class="placeholder-text">Traversing Knowledge Graph...</p>';
 
         try {
-            const response = await fetch('/api/chat', {
+            const response = await fetch('/api/main/chat', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
