@@ -120,3 +120,13 @@ async def chat(request: QueryRequest, current_user: str = Depends(get_current_us
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+from fastapi import Request
+@app.api_route("/{path_name:path}", methods=["GET", "POST", "PUT", "DELETE"])
+async def catch_all(request: Request, path_name: str):
+    return {
+        "request_method": request.method,
+        "request_url": str(request.url),
+        "path_name": path_name,
+        "headers": dict(request.headers)
+    }
