@@ -3,21 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hybrid GraphRAG Intelligence</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@500;700&display=swap" rel="stylesheet">
+    <title>Hybrid Vector and Graph RAG Engine</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
-    <meta name="description" content="Premium Hedge Fund Market Research Dashboard powered by GraphRAG">
+    <meta name="description" content="Hybrid Vector and Graph RAG Engine">
 </head>
 <body>
-    <div class="glass-background"></div>
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
 
     <!-- Login Overlay -->
     <div id="login-modal" class="modal-overlay">
-        <div class="modal-content glass-panel">
-            <h2 class="gradient-text">Secure Access</h2>
+        <div class="modal-content">
+            <h2>Secure Access</h2>
             <p>Authenticate to access the Hybrid RAG engine.</p>
             <form id="login-form">
                 <div class="input-group">
@@ -26,7 +22,7 @@
                 <div class="input-group">
                     <input type="password" id="password" placeholder="Password" required autocomplete="current-password">
                 </div>
-                <button type="submit" class="glow-button">Authenticate <span class="arrow">→</span></button>
+                <button type="submit" class="solid-button">Authenticate &rarr;</button>
             </form>
             <div id="login-error" class="error-msg"></div>
         </div>
@@ -35,10 +31,10 @@
     <!-- Main Dashboard -->
     <main id="dashboard" class="dashboard-container hidden">
         <header class="header">
-            <h1 class="gradient-text logo">Nexus<span class="light">Intelligence</span></h1>
+            <h1 class="logo">Hybrid Vector and Graph RAG Engine</h1>
             <div class="header-badges">
-                <span class="badge connected">Pinecone Active</span>
-                <span class="badge connected">Neo4j Aura</span>
+                <span class="badge connected">Neo4j Vector Active</span>
+                <span class="badge connected">Neo4j Graph Active</span>
                 <span class="badge connected">Groq Llama-3</span>
                 <button id="logout-btn" class="text-btn">Logout</button>
             </div>
@@ -47,16 +43,16 @@
         <div class="grid-layout">
             <!-- Left Column: Search & Answer -->
             <section class="main-column">
-                <div class="search-panel glass-panel">
+                <div class="search-panel panel">
                     <form id="query-form" class="search-form">
                         <input type="text" id="query-input" placeholder="Ask a complex market question... (e.g. How does NVIDIA impact Microsoft?)" required autocomplete="off">
-                        <button type="submit" class="glow-button icon-btn" id="submit-btn">
+                        <button type="submit" class="solid-button icon-btn" id="submit-btn">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                         </button>
                     </form>
                 </div>
 
-                <div class="answer-panel glass-panel">
+                <div class="answer-panel panel">
                     <div class="panel-header">
                         <h3>Synthesized Analysis</h3>
                         <div class="loader hidden" id="answer-loader"></div>
@@ -69,7 +65,7 @@
 
             <!-- Right Column: Context Sources -->
             <aside class="sidebar-column">
-                <div class="context-panel glass-panel">
+                <div class="context-panel panel">
                     <div class="panel-header">
                         <h3>Knowledge Graph (Neo4j)</h3>
                     </div>
@@ -78,12 +74,12 @@
                     </div>
                 </div>
 
-                <div class="context-panel glass-panel">
+                <div class="context-panel panel">
                     <div class="panel-header">
-                        <h3>Vector Excerpts (Pinecone)</h3>
+                        <h3>Vector Excerpts (Neo4j)</h3>
                     </div>
                     <div class="content-scroll" id="vector-content">
-                        <p class="placeholder-text">Semantic RRF chunks will appear here.</p>
+                        <p class="placeholder-text">Semantic text chunks will appear here.</p>
                     </div>
                 </div>
             </aside>

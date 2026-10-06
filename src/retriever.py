@@ -160,7 +160,7 @@ def graph_search(entities_dict: dict) -> list:
     OPTIONAL MATCH (c)-[r1]->(t1)
     OPTIONAL MATCH (t1)-[r2]->(t2)
     RETURN c.name AS n1, type(r1) AS rel1, t1.name AS n2, type(r2) AS rel2, t2.name AS n3
-    LIMIT 50
+    LIMIT 10
     """
 
     try:

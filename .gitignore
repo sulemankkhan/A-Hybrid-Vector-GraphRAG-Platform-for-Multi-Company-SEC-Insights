@@ -16,3 +16,5 @@ data/processed/
 Credentials/
 .DS_Store
 Credentials/
+.vercel
+.env*

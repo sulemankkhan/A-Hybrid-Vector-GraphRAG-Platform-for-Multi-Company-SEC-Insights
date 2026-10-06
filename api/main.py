@@ -79,7 +79,7 @@ async def chat(request: QueryRequest, current_user: str = Depends(get_current_us
         entities = route_query(request.query)
         
         # 2. Vector Search (Neo4j Native)
-        vector_results = vector_search(request.query, top_k=5)
+        vector_results = vector_search(request.query, top_k=3)
         
         # 3. Graph Search (Neo4j)
         graph_results = graph_search(entities)
@@ -109,7 +109,7 @@ async def chat(request: QueryRequest, current_user: str = Depends(get_current_us
             model="openai/gpt-oss-120b",
             messages=[{"role": "user", "content": system_prompt}],
             temperature=0.0,
-            max_tokens=1024,
+            max_tokens=4096,
         )
         answer = response.choices[0].message.content
             

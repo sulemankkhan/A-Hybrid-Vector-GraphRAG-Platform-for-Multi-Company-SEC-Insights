@@ -63,7 +63,7 @@ def route_query(query: str) -> dict:
                 {"role": "system", "content": SYSTEM_PROMPT.strip()},
                 {"role": "user", "content": query}
             ],
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-120b",
             temperature=0.0,
             max_tokens=256,
         )
