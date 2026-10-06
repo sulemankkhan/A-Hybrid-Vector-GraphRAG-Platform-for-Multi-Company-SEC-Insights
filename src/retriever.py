@@ -16,45 +16,47 @@ _neo4j_driver = None
 _embedding_model = None
 
 
-class HFCloudEmbeddingModel:
+class PineconeEmbeddingModel:
     """
-    HuggingFace Inference API v2 — matches the 384-dim all-MiniLM-L6-v2
-    vectors already stored in Pinecone. Works on Vercel (DNS resolves there).
-    Falls back to zero vectors on local Mac where HF DNS is blocked.
+    Uses Pinecone's native inference API (multilingual-e5-large, 1024-dim).
+    No HuggingFace dependency. Works on Vercel since Pinecone is already
+    reachable (same API we use for index queries).
     """
     def __init__(self):
-        self.api_key = os.getenv("HF_TOKEN", "")
-        # Classic pipeline API — works with any HF read token
-        self.api_url = "https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2"
-        self.headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
+        self._pc = None
+        self._load()
+
+    def _load(self):
+        try:
+            from pinecone import Pinecone
+            api_key = os.getenv("PINECONE_API_KEY")
+            if not api_key:
+                logger.error("PINECONE_API_KEY not set - embeddings will be zero vectors.")
+                return
+            self._pc = Pinecone(api_key=api_key)
+            logger.info("Pinecone inference client ready (multilingual-e5-large).")
+        except Exception as e:
+            logger.error(f"Pinecone inference init failed: {e}")
 
     def encode(self, query, show_progress_bar=False):
+        if self._pc is None:
+            return np.zeros(1024)
         try:
-            import requests as req
-            response = req.post(
-                self.api_url,
-                headers=self.headers,
-                json={"inputs": query},
-                timeout=15
+            result = self._pc.inference.embed(
+                model="multilingual-e5-large",
+                inputs=[query],
+                parameters={"input_type": "query", "truncate": "END"}
             )
-            if response.status_code != 200:
-                logger.error(f"HF API Error {response.status_code}: {response.text}")
-                return np.zeros(384)
-            data = response.json()
-            if isinstance(data, list) and len(data) > 0:
-                if isinstance(data[0], list):
-                    return np.array(data[0])
-                return np.array(data)
-            return np.zeros(384)
+            return np.array(result[0].values)
         except Exception as e:
-            logger.error(f"HF API call failed (DNS/network): {e}")
-            return np.zeros(384)
+            logger.error(f"Pinecone embed failed: {e}")
+            return np.zeros(1024)
 
 
 def get_embedding_model():
     global _embedding_model
     if _embedding_model is None:
-        _embedding_model = HFCloudEmbeddingModel()
+        _embedding_model = PineconeEmbeddingModel()
     return _embedding_model
 
 
