@@ -10,7 +10,7 @@ import sys
 # Ensure src modules can be imported
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.retriever import vector_search_rrf, graph_search
+from src.retriever import vector_search, graph_search
 from src.query_router import route_query
 from openai import OpenAI
 
@@ -78,8 +78,8 @@ async def chat(request: QueryRequest, current_user: str = Depends(get_current_us
         # 1. NER Extraction
         entities = route_query(request.query)
         
-        # 2. Vector Search (RRF via Pinecone)
-        vector_results = vector_search_rrf(request.query, top_k=5)
+        # 2. Vector Search (Neo4j Native)
+        vector_results = vector_search(request.query, top_k=5)
         
         # 3. Graph Search (Neo4j)
         graph_results = graph_search(entities)
@@ -113,7 +113,7 @@ async def chat(request: QueryRequest, current_user: str = Depends(get_current_us
         )
         answer = response.choices[0].message.content
             
-        formatted_vectors = [{"text": v, "source": "Pinecone RRF"} for v in vector_results]
+        formatted_vectors = [{"text": v, "source": "Neo4j Vector Index"} for v in vector_results]
         
         return QueryResponse(
             answer=answer,
