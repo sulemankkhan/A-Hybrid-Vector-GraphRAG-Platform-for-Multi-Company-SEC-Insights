@@ -60,23 +60,6 @@ def get_embedding_model():
     return _embedding_model
 
 
-def get_pinecone_index():
-    global _pinecone_index
-    if _pinecone_index is None:
-        try:
-            from pinecone import Pinecone
-            api_key = os.getenv("PINECONE_API_KEY")
-            index_name = os.getenv("PINECONE_INDEX_NAME")
-            if not api_key or not index_name:
-                logger.error("Pinecone credentials not set.")
-                return None
-            client = Pinecone(api_key=api_key)
-            _pinecone_index = client.Index(index_name)
-            logger.info(f"Pinecone index '{index_name}' connected.")
-        except Exception as e:
-            logger.error(f"Pinecone init failed: {e}")
-            return None
-    return _pinecone_index
 
 
 def get_neo4j_driver():
@@ -95,88 +78,61 @@ def get_neo4j_driver():
     return _neo4j_driver
 
 
-def query_single_collection(index, namespace: str, query_embedding: list, top_k: int = 5) -> list:
-    """Helper to query a single Pinecone namespace and return ranked documents."""
-    try:
-        filter_clause = {"is_parent": False} if namespace == "idx_parent_child" else None
-
-        results = index.query(
-            namespace=namespace,
-            vector=query_embedding,
-            top_k=top_k,
-            include_metadata=True,
-            filter=filter_clause
-        )
-
-        if not results.matches:
-            return []
-
-        retrieved_docs = []
-        for rank, match in enumerate(results.matches):
-            meta = match.metadata
-            doc = meta.get("text", "")
-
-            # Hierarchical Child-to-Parent Interception
-            if namespace == "idx_parent_child" and meta and "parent_chunk_id" in meta:
-                parent_id = meta["parent_chunk_id"]
-                try:
-                    parent_results = index.fetch(ids=[parent_id], namespace=namespace)
-                    if parent_results and parent_id in parent_results.vectors:
-                        doc = parent_results.vectors[parent_id].metadata.get("text", doc)
-                except Exception as e:
-                    logger.error(f"Failed to fetch parent chunk {parent_id}: {e}")
-
-            retrieved_docs.append({
-                "text": doc,
-                "rank": rank + 1,
-                "source": namespace
-            })
-
-        return retrieved_docs
-    except Exception as e:
-        logger.error(f"Query failed on namespace {namespace}: {e}")
-        return []
-
-
-def vector_search_rrf(query: str, top_k: int = 5) -> list:
+def vector_search(query: str, top_k: int = 5) -> list:
     """
-    Parallel Vector Retrieval with Reciprocal Rank Fusion (RRF).
+    Vector Retrieval using Neo4j's native Vector Index.
     """
     model = get_embedding_model()
-    index = get_pinecone_index()
+    driver = get_neo4j_driver()
 
-    if index is None:
-        logger.warning("Pinecone index unavailable. Skipping vector search.")
+    if driver is None:
+        logger.warning("Neo4j driver unavailable. Skipping vector search.")
         return []
 
     query_embedding = model.encode(query, show_progress_bar=False).tolist()
-    namespaces = ['idx_fixed', 'idx_recursive', 'idx_semantic', 'idx_parent_child']
 
-    all_results = []
-
-    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
-        futures = {
-            executor.submit(query_single_collection, index, ns, query_embedding, top_k): ns
-            for ns in namespaces
-        }
-        for future in concurrent.futures.as_completed(futures):
-            all_results.extend(future.result())
-
-    # Reciprocal Rank Fusion (RRF)
-    rrf_scores = {}
-    for item in all_results:
-        text = item["text"].strip()
-        if not text:
-            continue
-        rank = item["rank"]
-        score = 1.0 / (60.0 + rank)
-        if text in rrf_scores:
-            rrf_scores[text] += score
-        else:
-            rrf_scores[text] = score
-
-    sorted_rrf = sorted(rrf_scores.items(), key=lambda x: x[1], reverse=True)
-    return [text for text, score in sorted_rrf[:3]]
+    retrieved_texts = []
+    
+    # We query the unified chunk_embedding vector index
+    cypher = """
+    CALL db.index.vector.queryNodes('chunk_embedding', $top_k, $query_embedding)
+    YIELD node, score
+    RETURN node.id AS id, node.text AS text, node.chunk_type AS chunk_type, node.metadata AS metadata, score
+    """
+    
+    try:
+        with driver.session() as session:
+            result = session.run(cypher, top_k=top_k * 2, query_embedding=query_embedding)
+            
+            for record in result:
+                doc = record["text"]
+                chunk_type = record["chunk_type"]
+                metadata_str = record["metadata"]
+                
+                # Hierarchical Child-to-Parent Interception
+                if chunk_type == "idx_parent_child" and metadata_str and "parent_chunk_id" in metadata_str:
+                    try:
+                        import ast
+                        meta = ast.literal_eval(metadata_str)
+                        if "parent_chunk_id" in meta:
+                            parent_id = meta["parent_chunk_id"]
+                            # Fetch parent node
+                            parent_res = session.run("MATCH (p:DocumentChunk {id: $pid}) RETURN p.text AS text", pid=parent_id)
+                            parent_record = parent_res.single()
+                            if parent_record:
+                                doc = parent_record["text"]
+                    except Exception as e:
+                        logger.error(f"Failed to fetch parent chunk: {e}")
+                
+                if doc not in retrieved_texts:
+                    retrieved_texts.append(doc)
+                    if len(retrieved_texts) >= top_k:
+                        break
+                        
+        return retrieved_texts
+    except Exception as e:
+        logger.error(f"Neo4j vector search failed: {e}")
+        return []
 
 
 def graph_search(entities_dict: dict) -> list:
@@ -232,7 +188,7 @@ def generate_hybrid_context(query: str) -> str:
     """
     from src.query_router import route_query
 
-    vector_texts = vector_search_rrf(query)
+    vector_texts = vector_search(query)
     entities = route_query(query)
     graph_facts = graph_search(entities)
 
