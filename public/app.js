@@ -137,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
         submitBtn.disabled = true;
         loader.classList.remove('hidden');
         answerContent.innerHTML = '<p class="placeholder-text">Synthesizing multi-modal financial data...</p>';
-        vectorContent.innerHTML = '<p class="placeholder-text">Retrieving semantic vectors from Pinecone...</p>';
+        vectorContent.innerHTML = '<p class="placeholder-text">Retrieving semantic vectors from Neo4j...</p>';
         graphContent.innerHTML = '<p class="placeholder-text">Traversing Knowledge Graph...</p>';
 
         try {

@@ -77,19 +77,21 @@
             <aside class="sidebar-column">
                 <div class="context-panel panel">
                     <div class="panel-header">
-                        <h3>Knowledge Graph (Neo4j)</h3>
+                        <h3>Retrieved Context (Neo4j)</h3>
                     </div>
-                    <div class="content-scroll" id="graph-content">
-                        <p class="placeholder-text">Factual connections will appear here.</p>
-                    </div>
-                </div>
-
-                <div class="context-panel panel">
-                    <div class="panel-header">
-                        <h3>Vector Excerpts (Neo4j)</h3>
-                    </div>
-                    <div class="content-scroll" id="vector-content">
-                        <p class="placeholder-text">Semantic text chunks will appear here.</p>
+                    <div class="content-scroll">
+                        <div style="margin-bottom: 2rem;">
+                            <h4 style="margin-bottom: 1rem; color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">Knowledge Graph Facts</h4>
+                            <div id="graph-content">
+                                <p class="placeholder-text">Factual connections will appear here.</p>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 style="margin-bottom: 1rem; color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">Vector Excerpts</h4>
+                            <div id="vector-content">
+                                <p class="placeholder-text">Semantic text chunks will appear here.</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </aside>

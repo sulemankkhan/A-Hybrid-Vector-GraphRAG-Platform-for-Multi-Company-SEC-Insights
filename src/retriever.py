@@ -11,16 +11,14 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 # Deferred singleton references — nothing connects at import time
-_pinecone_index = None
 _neo4j_driver = None
 _embedding_model = None
 
 
-class PineconeEmbeddingModel:
+class CloudEmbeddingModel:
     """
-    Uses Pinecone's native inference API (multilingual-e5-large, 1024-dim).
-    No HuggingFace dependency. Works on Vercel since Pinecone is already
-    reachable (same API we use for index queries).
+    Uses cloud inference API (multilingual-e5-large, 1024-dim).
+    No HuggingFace dependency.
     """
     def __init__(self):
         self._pc = None
@@ -29,14 +27,14 @@ class PineconeEmbeddingModel:
     def _load(self):
         try:
             from pinecone import Pinecone
-            api_key = os.getenv("PINECONE_API_KEY")
+            api_key = os.getenv("INFERENCE_API_KEY") or os.getenv("PINECONE_API_KEY")
             if not api_key:
-                logger.error("PINECONE_API_KEY not set - embeddings will be zero vectors.")
+                logger.error("INFERENCE_API_KEY not set - embeddings will be zero vectors.")
                 return
             self._pc = Pinecone(api_key=api_key)
-            logger.info("Pinecone inference client ready (multilingual-e5-large).")
+            logger.info("Cloud inference client ready (multilingual-e5-large).")
         except Exception as e:
-            logger.error(f"Pinecone inference init failed: {e}")
+            logger.error(f"Inference init failed: {e}")
 
     def encode(self, query, show_progress_bar=False):
         if self._pc is None:
@@ -49,14 +47,14 @@ class PineconeEmbeddingModel:
             )
             return np.array(result[0].values)
         except Exception as e:
-            logger.error(f"Pinecone embed failed: {e}")
+            logger.error(f"Embed failed: {e}")
             return np.zeros(1024)
 
 
 def get_embedding_model():
     global _embedding_model
     if _embedding_model is None:
-        _embedding_model = PineconeEmbeddingModel()
+        _embedding_model = CloudEmbeddingModel()
     return _embedding_model
 
 
