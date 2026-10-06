@@ -162,6 +162,11 @@ input:focus {
     color: var(--success);
     border: 1px solid #a7f3d0;
 }
+.badge.disconnected {
+    background: #fef2f2;
+    color: var(--error);
+    border: 1px solid #fecaca;
+}
 
 .text-btn {
     background: none;
@@ -199,6 +204,57 @@ input:focus {
 }
 
 .search-form input { margin-bottom: 0; }
+    
+.sliders-container {
+    display: flex;
+    gap: 2rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+}
+
+.slider-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.slider-group label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.slider-group span {
+    color: var(--text-main);
+}
+
+input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    background: transparent;
+    padding: 0;
+    border: none;
+}
+
+input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    margin-top: -6px;
+}
+
+input[type=range]::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 4px;
+    cursor: pointer;
+    background: var(--border);
+    border-radius: 2px;
+}
 
 .icon-btn {
     width: 60px;

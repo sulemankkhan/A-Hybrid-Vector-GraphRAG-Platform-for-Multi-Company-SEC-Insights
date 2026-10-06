@@ -135,7 +135,7 @@ def vector_search(query: str, top_k: int = 5) -> list:
         return []
 
 
-def graph_search(entities_dict: dict) -> list:
+def graph_search(entities_dict: dict, limit: int = 10) -> list:
     """
     Multi-hop Knowledge Graph traversal using Neo4j.
     """
@@ -160,12 +160,12 @@ def graph_search(entities_dict: dict) -> list:
     OPTIONAL MATCH (c)-[r1]->(t1)
     OPTIONAL MATCH (t1)-[r2]->(t2)
     RETURN c.name AS n1, type(r1) AS rel1, t1.name AS n2, type(r2) AS rel2, t2.name AS n3
-    LIMIT 10
+    LIMIT $limit
     """
 
     try:
         with driver.session() as session:  # No database arg — Aura auto-routes
-            result = session.run(query, entities=entities)
+            result = session.run(query, entities=entities, limit=limit)
             for record in result:
                 n1, rel1, n2, rel2, n3 = record["n1"], record["rel1"], record["n2"], record["rel2"], record["n3"]
                 if n1 and rel1 and n2:
@@ -181,37 +181,3 @@ def graph_search(entities_dict: dict) -> list:
 
     return facts
 
-
-def generate_hybrid_context(query: str) -> str:
-    """
-    Context Fusion Output using Hierarchical Ensemble Retrieval (RRF) and Graph.
-    """
-    from src.query_router import route_query
-
-    vector_texts = vector_search(query)
-    entities = route_query(query)
-    graph_facts = graph_search(entities)
-
-    fusion_parts = []
-
-    if graph_facts:
-        fusion_parts.append("### Structured Knowledge Graph Facts ###")
-        fusion_parts.append("\n".join(graph_facts))
-        fusion_parts.append("\n")
-
-    if vector_texts:
-        fusion_parts.append("### Relevant Document Excerpts ###")
-        fusion_parts.append("\n\n---\n\n".join(vector_texts))
-
-    hybrid_context = "\n".join(fusion_parts)
-
-    if not hybrid_context.strip():
-        return "No relevant context found."
-
-    return hybrid_context
-
-
-if __name__ == "__main__":
-    test_q = "What are the structural dependencies between ASML and global foundries like TSMC and Samsung?"
-    context = generate_hybrid_context(test_q)
-    print(context)

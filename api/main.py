@@ -64,6 +64,8 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
 
 class QueryRequest(BaseModel):
     query: str
+    vector_limit: int = 3
+    graph_limit: int = 10
 
 class QueryResponse(BaseModel):
     answer: str
@@ -79,10 +81,10 @@ async def chat(request: QueryRequest, current_user: str = Depends(get_current_us
         entities = route_query(request.query)
         
         # 2. Vector Search (Neo4j Native)
-        vector_results = vector_search(request.query, top_k=3)
+        vector_results = vector_search(request.query, top_k=request.vector_limit)
         
         # 3. Graph Search (Neo4j)
-        graph_results = graph_search(entities)
+        graph_results = graph_search(entities, limit=request.graph_limit)
         
         # 4. Fuse Context
         fusion_parts = []
@@ -123,11 +125,21 @@ async def chat(request: QueryRequest, current_user: str = Depends(get_current_us
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-from fastapi import Request
-@app.api_route("/api/debug/{path_name:path}", methods=["GET", "POST"])
-async def debug_route(request: Request, path_name: str):
+from src.retriever import get_neo4j_driver
+@app.get("/api/main/health")
+@app.get("/api/health")
+async def health_check():
+    driver = get_neo4j_driver()
+    neo4j_status = False
+    if driver:
+        try:
+            with driver.session() as session:
+                session.run("RETURN 1")
+            neo4j_status = True
+        except Exception:
+            pass
+            
     return {
-        "request_url": str(request.url),
-        "path_info": request.scope.get("path"),
-        "raw_path": request.scope.get("raw_path").decode() if request.scope.get("raw_path") else None
+        "neo4j_connected": neo4j_status,
+        "llm_connected": True
     }

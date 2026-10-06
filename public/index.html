@@ -33,9 +33,9 @@
         <header class="header">
             <h1 class="logo">Hybrid Vector and Graph RAG Engine</h1>
             <div class="header-badges">
-                <span class="badge connected">Neo4j Vector Active</span>
-                <span class="badge connected">Neo4j Graph Active</span>
-                <span class="badge connected">Groq Llama-3</span>
+                <span id="badge-neo4j-vector" class="badge">Neo4j Vector Checking...</span>
+                <span id="badge-neo4j-graph" class="badge">Neo4j Graph Checking...</span>
+                <span id="badge-llm" class="badge">Groq Llama-3 Checking...</span>
                 <button id="logout-btn" class="text-btn">Logout</button>
             </div>
         </header>
@@ -50,6 +50,16 @@
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                         </button>
                     </form>
+                    <div class="sliders-container">
+                        <div class="slider-group">
+                            <label for="vector-limit">Vector DB Context Limit: <span id="vector-limit-val">3</span></label>
+                            <input type="range" id="vector-limit" min="1" max="10" value="3">
+                        </div>
+                        <div class="slider-group">
+                            <label for="graph-limit">Graph DB Context Limit: <span id="graph-limit-val">10</span></label>
+                            <input type="range" id="graph-limit" min="5" max="50" value="10">
+                        </div>
+                    </div>
                 </div>
 
                 <div class="answer-panel panel">

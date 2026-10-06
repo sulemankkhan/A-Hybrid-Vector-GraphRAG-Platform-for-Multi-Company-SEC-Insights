@@ -13,6 +13,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const answerContent = document.getElementById('answer-content');
     const vectorContent = document.getElementById('vector-content');
     const graphContent = document.getElementById('graph-content');
+    
+    const vectorLimitSlider = document.getElementById('vector-limit');
+    const vectorLimitVal = document.getElementById('vector-limit-val');
+    const graphLimitSlider = document.getElementById('graph-limit');
+    const graphLimitVal = document.getElementById('graph-limit-val');
+
+    vectorLimitSlider.addEventListener('input', (e) => {
+        vectorLimitVal.textContent = e.target.value;
+    });
+
+    graphLimitSlider.addEventListener('input', (e) => {
+        graphLimitVal.textContent = e.target.value;
+    });
 
     // Authentication State
     let authToken = localStorage.getItem('nexus_token');
@@ -24,6 +37,43 @@ document.addEventListener('DOMContentLoaded', () => {
     function showDashboard() {
         loginModal.classList.add('hidden');
         dashboard.classList.remove('hidden');
+        checkHealth();
+    }
+    
+    async function checkHealth() {
+        try {
+            const response = await fetch('/api/main/health');
+            const data = await response.json();
+            
+            const badgeVector = document.getElementById('badge-neo4j-vector');
+            const badgeGraph = document.getElementById('badge-neo4j-graph');
+            const badgeLlm = document.getElementById('badge-llm');
+            
+            if(data.neo4j_connected) {
+                badgeVector.classList.add('connected');
+                badgeVector.classList.remove('disconnected');
+                badgeVector.textContent = 'Neo4j Vector Active';
+                badgeGraph.classList.add('connected');
+                badgeGraph.classList.remove('disconnected');
+                badgeGraph.textContent = 'Neo4j Graph Active';
+            } else {
+                badgeVector.classList.add('disconnected');
+                badgeVector.classList.remove('connected');
+                badgeVector.textContent = 'Neo4j Vector Error';
+                badgeGraph.classList.add('disconnected');
+                badgeGraph.classList.remove('connected');
+                badgeGraph.textContent = 'Neo4j Graph Error';
+            }
+            
+            if(data.llm_connected) {
+                badgeLlm.classList.add('connected');
+                badgeLlm.classList.remove('disconnected');
+                badgeLlm.textContent = 'Groq Llama-3 Active';
+            }
+            
+        } catch (e) {
+            console.error("Health check failed", e);
+        }
     }
 
     function logout() {
@@ -98,7 +148,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Authorization': `Bearer ${authToken}`
                 },
                 credentials: 'include',
-                body: JSON.stringify({ query: query })
+                body: JSON.stringify({ 
+                    query: query,
+                    vector_limit: parseInt(vectorLimitSlider.value),
+                    graph_limit: parseInt(graphLimitSlider.value)
+                })
             });
 
             if (response.status === 401) {
